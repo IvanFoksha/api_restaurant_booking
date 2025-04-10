@@ -3,7 +3,7 @@ name = "restaurant-booking"
 version = "0.1.0"
 description = "Restaurant booking API"
 authors = ["Ivan Foksha <v.fokh6@gmail.com>"]
-package-mode = false
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
