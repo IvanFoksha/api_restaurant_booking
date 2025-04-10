@@ -7,10 +7,7 @@ WORKDIR /app
 # Set environment variables
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    POETRY_VERSION=1.7.1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_VIRTUALENVS_CREATE=false
+    PYTHONDONTWRITEBYTECODE=1
 
 # Install system dependencies
 RUN apt-get update \
@@ -21,14 +18,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="${POETRY_HOME}/bin:$PATH"
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && ln -s /root/.local/bin/poetry /usr/local/bin/poetry
 
 # Copy poetry files
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml poetry.lock* ./
 
 # Install dependencies
-RUN poetry install --no-interaction --no-ansi --no-root
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi
 
 # Copy application code
 COPY . .
@@ -40,4 +38,4 @@ RUN mkdir -p logs
 EXPOSE 8000
 
 # Set the entrypoint
-ENTRYPOINT ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
