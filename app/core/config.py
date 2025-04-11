@@ -1,8 +1,9 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Any, Generator
 from pydantic_settings import BaseSettings
-from pydantic import PostgresDsn, validator
+from pydantic import PostgresDsn, field_validator
 import secrets
 from functools import lru_cache
+from sqlmodel import Session, create_engine
 
 
 class Settings(BaseSettings):
@@ -20,19 +21,25 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "restaurant_booking"
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
 
-    @validator("SQLALCHEMY_DATABASE_URI", pre=True)
+    @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
+    @classmethod
     def assemble_db_connection(
-        cls, v: Optional[str], values: Dict[str, Any]
+        cls, v: Optional[str], info: Any
     ) -> Optional[PostgresDsn]:
         if isinstance(v, str):
             return v
         return PostgresDsn.build(
             scheme="postgresql",
-            username=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            path=f"/{values.get('POSTGRES_DB') or ''}",
+            username=info.data.get("POSTGRES_USER"),
+            password=info.data.get("POSTGRES_PASSWORD"),
+            host=info.data.get("POSTGRES_SERVER"),
+            path=f"/{info.data.get('POSTGRES_DB') or ''}",
         )
+
+    def get_session(self) -> Generator[Session, None, None]:
+        engine = create_engine(str(self.SQLALCHEMY_DATABASE_URI))
+        with Session(engine) as session:
+            yield session
 
     # Logging settings
     LOG_LEVEL: str = "INFO"
