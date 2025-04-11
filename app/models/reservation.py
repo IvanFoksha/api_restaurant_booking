@@ -1,33 +1,42 @@
 from datetime import datetime
+from typing import Optional
 
-from sqlmodel import Field, Relationship
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+from sqlmodel import SQLModel
 
-from app.db.base import BaseModel
-from app.models.table import Table
 
-
-class Reservation(BaseModel, table=True):
+class Reservation(SQLModel, table=True):
     """
     Reservation model representing a table booking.
     """
     __tablename__ = "reservations"
 
-    customer_name: str = Field(index=True)
-    table_id: int = Field(foreign_key="tables.id", index=True)
-    reservation_time: datetime = Field(index=True)
-    duration_minutes: int = Field(ge=1)
+    id: Optional[int] = Column(Integer, primary_key=True, index=True)
+    customer_name: str = Column(String(100))
+    customer_email: str = Column(String(100))
+    customer_phone: str = Column(String(20))
+    party_size: int
+    reservation_time: datetime
+    status: str = Column(String(20), default="pending")
+    created_at: datetime = Column(DateTime, default=datetime.utcnow)
+    updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationship
-    table: Table = Relationship(back_populates="reservations")
+    # Foreign key and relationship
+    table_id: int = Column(Integer, ForeignKey("tables.id"))
+    table: "Table" = relationship("Table", back_populates="reservations")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "customer_name": "John Doe",
-                "table_id": 1,
+                "customer_email": "john@example.com",
+                "customer_phone": "+1234567890",
+                "party_size": 4,
                 "reservation_time": "2024-01-01T19:00:00",
-                "duration_minutes": 120,
+                "status": "pending",
+                "table_id": 1,
                 "created_at": "2024-01-01T12:00:00",
                 "updated_at": "2024-01-01T12:00:00"
             }
