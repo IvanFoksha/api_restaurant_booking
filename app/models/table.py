@@ -1,32 +1,28 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional, List
 
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
 
-from app.models.base import BaseModel
-from app.models.reservation import Reservation
+if TYPE_CHECKING:
+    from app.models.reservation import Reservation
 
 
-class Table(BaseModel, table=True):
+class Table(SQLModel, table=True):
     """
     Table model representing a restaurant table.
     """
     __tablename__ = "tables"
 
-    number: int = Field(sa_column=Column(Integer, unique=True, index=True))
-    capacity: int = Field()
-    location: str = Field(sa_column=Column(String(100)))
+    id: Optional[int] = Field(default=None, primary_key=True)
+    number: int = Field(unique=True, index=True)
+    capacity: int
+    location: str
+    is_available: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Use string reference for relationship
-    reservations: List["Reservation"] = Field(
-        default=[],
-        sa_relationship=relationship(
-            "Reservation",
-            back_populates="table",
-            cascade="all, delete-orphan"
-        )
-    )
+    # Relationships
+    reservations: List["Reservation"] = Relationship(back_populates="table")
 
     class Config:
         json_schema_extra = {
@@ -34,8 +30,9 @@ class Table(BaseModel, table=True):
                 "id": 1,
                 "number": 1,
                 "capacity": 4,
-                "location": "Main Hall",
-                "created_at": "2024-01-01T12:00:00",
-                "updated_at": "2024-01-01T12:00:00"
+                "location": "Window",
+                "is_available": True,
+                "created_at": "2024-04-11T12:00:00",
+                "updated_at": "2024-04-11T12:00:00"
             }
         }

@@ -1,48 +1,48 @@
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Column, String
-from sqlalchemy.orm import relationship
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
 
-from app.models.base import BaseModel
-from app.models.enums import ReservationStatus
+if TYPE_CHECKING:
+    from app.models.table import Table
 
 
-class Reservation(BaseModel, table=True):
+class Reservation(SQLModel, table=True):
     """
     Reservation model representing a table booking.
     """
     __tablename__ = "reservations"
 
-    customer_name: str = Field(sa_column=Column(String(100)))
-    customer_email: str = Field(sa_column=Column(String(100)))
-    customer_phone: str = Field(sa_column=Column(String(20)))
-    party_size: int = Field()
-    reservation_time: datetime = Field()
-    status: ReservationStatus = Field(
-        sa_column=Column(String(20)),
-        default=ReservationStatus.PENDING
-    )
-
-    # Foreign key and relationship
+    id: Optional[int] = Field(default=None, primary_key=True)
     table_id: int = Field(foreign_key="tables.id")
-    table: "Table" = Field(
-        sa_relationship=relationship("Table", back_populates="reservations")
-    )
+    guest_name: str
+    guest_email: str
+    guest_phone: str
+    party_size: int
+    reservation_time: datetime
+    duration: int = Field(default=120)  # Duration in minutes
+    status: str = Field(default="pending")
+    notes: Optional[str] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Relationships
+    table: "Table" = Relationship(back_populates="reservations")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "id": 1,
-                "customer_name": "John Doe",
-                "customer_email": "john@example.com",
-                "customer_phone": "+1234567890",
-                "party_size": 4,
-                "reservation_time": "2024-01-01T19:00:00",
-                "status": "pending",
                 "table_id": 1,
-                "created_at": "2024-01-01T12:00:00",
-                "updated_at": "2024-01-01T12:00:00"
+                "guest_name": "John Doe",
+                "guest_email": "john@example.com",
+                "guest_phone": "+1234567890",
+                "party_size": 2,
+                "reservation_time": "2024-04-11T19:00:00",
+                "duration": 120,
+                "status": "confirmed",
+                "notes": "Window seat preferred",
+                "created_at": "2024-04-11T12:00:00",
+                "updated_at": "2024-04-11T12:00:00"
             }
-        } 
+        }
