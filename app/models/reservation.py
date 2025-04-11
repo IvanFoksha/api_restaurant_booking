@@ -1,26 +1,25 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlmodel import SQLModel
 
+from app.models.base import BaseModel
 
-class Reservation(SQLModel, table=True):
+
+class Reservation(BaseModel, table=True):
     """
     Reservation model representing a table booking.
     """
     __tablename__ = "reservations"
 
-    id: Optional[int] = Column(Integer, primary_key=True, index=True)
     customer_name: str = Column(String(100))
     customer_email: str = Column(String(100))
     customer_phone: str = Column(String(20))
     party_size: int
     reservation_time: datetime
     status: str = Column(String(20), default="pending")
-    created_at: datetime = Column(DateTime, default=datetime.utcnow)
-    updated_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Foreign key and relationship
     table_id: int = Column(Integer, ForeignKey("tables.id"))
