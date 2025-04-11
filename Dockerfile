@@ -12,21 +12,15 @@ ENV PYTHONPATH=/app \
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        curl \
         build-essential \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-    && ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+# Copy requirements
+COPY requirements.txt .
 
-# Copy poetry files
-COPY pyproject.toml poetry.lock* ./
-
-# Install dependencies
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
@@ -38,4 +32,4 @@ RUN mkdir -p logs
 EXPOSE 8000
 
 # Set the entrypoint
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
