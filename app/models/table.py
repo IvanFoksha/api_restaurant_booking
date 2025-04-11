@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
@@ -19,10 +19,13 @@ class Table(BaseModel, table=True):
     location: str = Field(sa_column=Column(String(100)))
 
     # Use string reference for relationship
-    reservations: List["Reservation"] = relationship(
-        "Reservation",
-        back_populates="table",
-        cascade="all, delete-orphan"
+    reservations: List["Reservation"] = Field(
+        default=[],
+        sa_relationship=relationship(
+            "Reservation",
+            back_populates="table",
+            cascade="all, delete-orphan"
+        )
     )
 
     class Config:

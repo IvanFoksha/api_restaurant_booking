@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 from sqlmodel import Field, SQLModel
 
@@ -27,7 +27,9 @@ class Reservation(BaseModel, table=True):
 
     # Foreign key and relationship
     table_id: int = Field(foreign_key="tables.id")
-    table: "Table" = relationship("Table", back_populates="reservations")
+    table: "Table" = Field(
+        sa_relationship=relationship("Table", back_populates="reservations")
+    )
 
     class Config:
         json_schema_extra = {
