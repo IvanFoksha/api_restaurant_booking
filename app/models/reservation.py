@@ -3,9 +3,10 @@ from typing import Optional
 
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-from sqlmodel import SQLModel
+from sqlmodel import Field, SQLModel
 
 from app.models.base import BaseModel
+from app.models.enums import ReservationStatus
 
 
 class Reservation(BaseModel, table=True):
@@ -14,15 +15,18 @@ class Reservation(BaseModel, table=True):
     """
     __tablename__ = "reservations"
 
-    customer_name: str = Column(String(100))
-    customer_email: str = Column(String(100))
-    customer_phone: str = Column(String(20))
-    party_size: int
-    reservation_time: datetime
-    status: str = Column(String(20), default="pending")
+    customer_name: str = Field(sa_column=Column(String(100)))
+    customer_email: str = Field(sa_column=Column(String(100)))
+    customer_phone: str = Field(sa_column=Column(String(20)))
+    party_size: int = Field()
+    reservation_time: datetime = Field()
+    status: ReservationStatus = Field(
+        sa_column=Column(String(20)),
+        default=ReservationStatus.PENDING
+    )
 
     # Foreign key and relationship
-    table_id: int = Column(Integer, ForeignKey("tables.id"))
+    table_id: int = Field(foreign_key="tables.id")
     table: "Table" = relationship("Table", back_populates="reservations")
 
     class Config:
