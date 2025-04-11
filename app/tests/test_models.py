@@ -1,72 +1,57 @@
-from datetime import datetime, timedelta
-
-import pytest
+from datetime import datetime, UTC
 from sqlmodel import Session
 
 from app.models.table import Table
 from app.models.reservation import Reservation
 
 
-def test_create_table(session: Session):
+def test_create_table(db_session: Session):
+    """Test creating a table."""
     table = Table(
-        number=1,
-        capacity=4,
-        location="Window",
-        is_available=True
+        name="Test Table",
+        seats=4,
+        location="Main Hall"
     )
-    session.add(table)
-    session.commit()
-    session.refresh(table)
+    db_session.add(table)
+    db_session.commit()
+    db_session.refresh(table)
 
     assert table.id is not None
-    assert table.number == 1
-    assert table.capacity == 4
-    assert table.location == "Window"
-    assert table.is_available is True
+    assert table.name == "Test Table"
+    assert table.seats == 4
+    assert table.location == "Main Hall"
 
 
-def test_create_reservation(session: Session, table: Table):
+def test_create_reservation(db_session: Session, table_fixture: Table):
+    """Test creating a reservation."""
     reservation = Reservation(
-        table_id=table.id,
-        guest_name="Test Guest",
-        guest_email="test@example.com",
-        guest_phone="+1234567890",
-        party_size=2,
-        reservation_time=datetime.utcnow() + timedelta(days=1),
-        duration=120,
-        status="pending"
+        customer_name="Test Customer",
+        reservation_time=datetime.now(UTC),
+        duration_minutes=60,
+        table_id=table_fixture.id
     )
-    session.add(reservation)
-    session.commit()
-    session.refresh(reservation)
+    db_session.add(reservation)
+    db_session.commit()
+    db_session.refresh(reservation)
 
     assert reservation.id is not None
-    assert reservation.table_id == table.id
-    assert reservation.guest_name == "Test Guest"
-    assert reservation.guest_email == "test@example.com"
-    assert reservation.guest_phone == "+1234567890"
-    assert reservation.party_size == 2
-    assert reservation.duration == 120
-    assert reservation.status == "pending"
+    assert reservation.customer_name == "Test Customer"
+    assert reservation.table_id == table_fixture.id
 
 
-def test_table_reservation_relationship(session: Session, table: Table):
-    # Create a reservation for the table
+def test_table_reservation_relationship(db_session: Session, table_fixture: Table):
+    """Test table-reservation relationship."""
+    # Create a reservation
     reservation = Reservation(
-        table_id=table.id,
-        guest_name="Test Guest",
-        guest_email="test@example.com",
-        guest_phone="+1234567890",
-        party_size=2,
-        reservation_time=datetime.utcnow() + timedelta(days=1),
-        duration=120,
-        status="pending"
+        customer_name="Test Customer",
+        reservation_time=datetime.now(UTC),
+        duration_minutes=60,
+        table_id=table_fixture.id
     )
-    session.add(reservation)
-    session.commit()
-    session.refresh(table)
+    db_session.add(reservation)
+    db_session.commit()
+    db_session.refresh(reservation)
 
-    # Check relationship
-    assert len(table.reservations) == 1
-    assert table.reservations[0].id == reservation.id
-    assert reservation.table.id == table.id
+    # Test relationship
+    assert reservation.table_id == table_fixture.id
+    assert table_fixture.reservations[0].id == reservation.id

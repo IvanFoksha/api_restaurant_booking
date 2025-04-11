@@ -10,7 +10,7 @@ class TableBase(BaseModel):
     """
     name: str = Field(..., min_length=1, max_length=100)
     seats: int = Field(..., ge=1)
-    location: str = Field(..., min_length=1, max_length=100)
+    location: str = Field(default="Main Hall", min_length=1, max_length=100)
 
 
 class TableCreate(TableBase):

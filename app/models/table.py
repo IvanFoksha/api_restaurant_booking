@@ -14,10 +14,9 @@ class Table(SQLModel, table=True):
     __tablename__ = "tables"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    number: int = Field(unique=True, index=True)
-    capacity: int
-    location: str
-    is_available: bool = Field(default=True)
+    name: str = Field(unique=True, index=True)
+    seats: int
+    location: Optional[str] = Field(default="Main Hall")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -28,10 +27,9 @@ class Table(SQLModel, table=True):
         json_schema_extra = {
             "example": {
                 "id": 1,
-                "number": 1,
-                "capacity": 4,
-                "location": "Window",
-                "is_available": True,
+                "name": "Table 1",
+                "seats": 4,
+                "location": "зал у окна",
                 "created_at": "2024-04-11T12:00:00",
                 "updated_at": "2024-04-11T12:00:00"
             }

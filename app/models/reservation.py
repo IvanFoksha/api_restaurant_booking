@@ -15,14 +15,9 @@ class Reservation(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     table_id: int = Field(foreign_key="tables.id")
-    guest_name: str
-    guest_email: str
-    guest_phone: str
-    party_size: int
+    customer_name: str
     reservation_time: datetime
-    duration: int = Field(default=120)  # Duration in minutes
-    status: str = Field(default="pending")
-    notes: Optional[str] = Field(default=None)
+    duration_minutes: int = Field(default=60)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -34,14 +29,9 @@ class Reservation(SQLModel, table=True):
             "example": {
                 "id": 1,
                 "table_id": 1,
-                "guest_name": "John Doe",
-                "guest_email": "john@example.com",
-                "guest_phone": "+1234567890",
-                "party_size": 2,
+                "customer_name": "John Doe",
                 "reservation_time": "2024-04-11T19:00:00",
-                "duration": 120,
-                "status": "confirmed",
-                "notes": "Window seat preferred",
+                "duration_minutes": 60,
                 "created_at": "2024-04-11T12:00:00",
                 "updated_at": "2024-04-11T12:00:00"
             }

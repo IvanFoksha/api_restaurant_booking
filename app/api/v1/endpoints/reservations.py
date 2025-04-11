@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
+from pydantic import ValidationError
 
 from app.db.session import get_session
 from app.schemas.reservation import (
@@ -27,20 +28,32 @@ def get_reservations(
 
 @router.post("/", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)
 def create_reservation(
-    reservation_data: ReservationCreate,
-    session: Session = Depends(get_session)
+    reservation: ReservationCreate,
+    db: Session = Depends(get_session)
 ) -> ReservationResponse:
     """
     Create a new reservation.
+    
+    Args:
+        reservation: Reservation data
+        db: Database session
+        
+    Returns:
+        ReservationResponse: Created reservation
+        
+    Raises:
+        HTTPException: If reservation cannot be created
     """
-    service = ReservationService(session)
-    reservation = service.create(reservation_data)
-    if not reservation:
+    reservation_service = ReservationService(db)
+    created_reservation = reservation_service.create(reservation)
+    
+    if not created_reservation:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not create reservation. Table might not exist or time slot is already booked."
+            detail="Cannot create reservation. Table not found or time conflict."
         )
-    return reservation
+        
+    return ReservationResponse.model_validate(created_reservation)
 
 
 @router.get("/{reservation_id}", response_model=ReservationResponse)

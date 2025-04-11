@@ -1,19 +1,21 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
+from fastapi import HTTPException, status
 from pydantic import BaseModel, Field, validator
+from sqlmodel import SQLModel
 
 from app.schemas.table import TableResponse
 
 
-class ReservationBase(BaseModel):
+class ReservationBase(SQLModel):
     """
-    Base schema for Reservation with common attributes.
+    Base schema for reservation data.
     """
-    customer_name: str = Field(..., min_length=1, max_length=100)
-    table_id: int = Field(..., gt=0)
+    customer_name: str
     reservation_time: datetime
-    duration_minutes: int = Field(..., ge=1, le=480)  # Max 8 hours
+    duration_minutes: int = Field(default=60)
+    table_id: int
 
 
 class ReservationCreate(ReservationBase):
@@ -25,28 +27,49 @@ class ReservationCreate(ReservationBase):
         """
         Validate that reservation time is in the future.
         """
-        if v < datetime.now():
-            raise ValueError("Reservation time must be in the future")
+        now = datetime.now(v.tzinfo if v.tzinfo else None)
+        if v < now:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Reservation time must be in the future"
+            )
         return v
 
 
-class ReservationUpdate(ReservationBase):
+class ReservationUpdate(SQLModel):
     """
     Schema for updating an existing reservation.
     """
-    customer_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    table_id: Optional[int] = Field(None, gt=0)
+    customer_name: Optional[str] = None
     reservation_time: Optional[datetime] = None
-    duration_minutes: Optional[int] = Field(None, ge=1, le=480)
+    duration_minutes: Optional[int] = None
+    table_id: Optional[int] = None
 
     @validator("reservation_time")
     def validate_future_time(cls, v):
         """
         Validate that reservation time is in the future.
         """
-        if v is not None and v < datetime.now():
-            raise ValueError("Reservation time must be in the future")
+        if v is not None:
+            now = datetime.now(v.tzinfo if v.tzinfo else None)
+            if v < now:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Reservation time must be in the future"
+                )
         return v
+
+
+class ReservationRead(ReservationBase):
+    """
+    Schema for reading reservation data.
+    """
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class ReservationResponse(ReservationBase):

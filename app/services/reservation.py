@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import List, Optional
 
-from sqlmodel import Session, select
+from fastapi import HTTPException, status
+from sqlmodel import Session, select, func, Integer
 
 from app.models.reservation import Reservation
 from app.models.table import Table
@@ -70,25 +71,37 @@ class ReservationService:
         Returns:
             bool: True if there is a conflict, False otherwise
         """
+        # Ensure reservation_time is timezone-aware
+        if reservation_time.tzinfo is None:
+            reservation_time = reservation_time.replace(tzinfo=UTC)
+            
         end_time = reservation_time + timedelta(minutes=duration_minutes)
         
-        # Build the query
-        query = select(Reservation).where(
-            Reservation.table_id == table_id,
-            Reservation.reservation_time < end_time,
-            reservation_time < (
-                Reservation.reservation_time + 
-                timedelta(minutes=Reservation.duration_minutes)
+        # Get all reservations for the table
+        reservations = self.session.exec(
+            select(Reservation).where(
+                Reservation.table_id == table_id,
+                Reservation.id != exclude_id if exclude_id else True
             )
-        )
+        ).all()
         
-        # Exclude current reservation when updating
-        if exclude_id:
-            query = query.where(Reservation.id != exclude_id)
-        
-        # Check if any conflicting reservations exist
-        conflicts = self.session.exec(query).all()
-        return len(conflicts) > 0
+        # Check for conflicts
+        for reservation in reservations:
+            # Ensure reservation time is timezone-aware
+            res_time = reservation.reservation_time
+            if res_time.tzinfo is None:
+                res_time = res_time.replace(tzinfo=UTC)
+                
+            res_end_time = res_time + timedelta(minutes=reservation.duration_minutes)
+            
+            # Check if there is an overlap
+            if (
+                (res_time <= reservation_time and reservation_time < res_end_time) or
+                (res_time < end_time and end_time <= res_end_time)
+            ):
+                return True
+                
+        return False
 
     def create(self, reservation_data: ReservationCreate) -> Optional[Reservation]:
         """
@@ -99,6 +112,9 @@ class ReservationService:
             
         Returns:
             Optional[Reservation]: Created reservation if successful, None if conflict
+            
+        Raises:
+            HTTPException: If table is not found
         """
         # Check if table exists
         table = self.session.get(Table, reservation_data.table_id)

@@ -49,29 +49,29 @@ def client(db_session) -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture
-def table_fixture(db_session: Session) -> Dict[str, Any]:
+def table_fixture(db_session) -> Table:
+    """Create a test table."""
     table = Table(
-        number=1,
-        capacity=4,
-        is_available=True
+        name="Table 1",
+        seats=4,
+        location="зал у окна"
     )
     db_session.add(table)
     db_session.commit()
     db_session.refresh(table)
-    return {"id": table.id, "number": table.number}
+    return table
 
 
 @pytest.fixture
 def reservation_fixture(
     db_session: Session,
-    table_fixture: Dict[str, Any]
+    table_fixture: Table
 ) -> Dict[str, Any]:
     reservation = Reservation(
         customer_name="Test Customer",
-        customer_email="test@example.com",
-        party_size=2,
         reservation_time=datetime.now(UTC),
-        table_id=table_fixture["id"]
+        duration_minutes=60,
+        table_id=table_fixture.id
     )
     db_session.add(reservation)
     db_session.commit()
