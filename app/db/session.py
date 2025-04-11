@@ -1,7 +1,6 @@
 from typing import Generator
 
 from sqlmodel import Session, create_engine
-from sqlmodel.pool import StaticPool
 
 from app.core.config import settings
 
@@ -9,8 +8,7 @@ from app.core.config import settings
 engine = create_engine(
     str(settings.SQLALCHEMY_DATABASE_URI),
     pool_pre_ping=True,
-    poolclass=StaticPool,
-    connect_args={"check_same_thread": False}  # Needed for SQLite
+    echo=settings.LOG_LEVEL == "DEBUG"  # Enable SQL logging in debug mode
 )
 
 
